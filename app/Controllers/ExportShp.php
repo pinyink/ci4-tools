@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use CodeIgniter\Database\RawSql;
 use CodeIgniter\HTTP\ResponseInterface;
 use Shapefile\Shapefile;
 use Shapefile\ShapefileException;
@@ -12,7 +13,8 @@ class ExportShp extends BaseController
 {
     public function index()
     {
-        echo "hello";
+		$db = \Config\Database::connect();
+		$table = $db->table('kel');
         try {
             $Shapefile = new ShapefileReader(WRITEPATH . '/shp/ADMIN_GROBOGAN_GEOGRAFIS.shp');
             $tot = $Shapefile->getTotRecords();
@@ -26,12 +28,22 @@ class ExportShp extends BaseController
 					if ($Geometry->isDeleted()) {
 						continue;
 					}
-					$data = [];
 					$array = $Geometry->getDataArray();
-					
 					$jsonData = $Geometry->getWKT();
-                    print_r($array);
-                    print_r($jsonData);
+					$shp = new RawSql("ST_GeomFromText('".$jsonData."')");
+
+					$kodeKel = explode('.', $array['KDEPUM']);
+					$query = $table->where(['no_prop' => $kodeKel[0], 'no_kab' => $kodeKel[1], 'no_kec' => $kodeKel[2], 'no_kel' => $kodeKel[3]])->get()->getRowArray();
+					if (empty($query)) {
+						echo "desa tidak di ketahui\n";
+						print_r($array);
+						print_r($jsonData);
+					} else {
+						$dataUpdate = [
+							'shp' => $shp
+						];
+						$table->update($dataUpdate, ['id' => $query['id']]);
+					}
 
 				} catch (ShapefileException $e) {
 					// Handle some specific errors types or fallback to default
