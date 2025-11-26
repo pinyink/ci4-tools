@@ -16,7 +16,7 @@ class ExportShp extends BaseController
 		$db = \Config\Database::connect();
 		$table = $db->table('kel');
         try {
-            $Shapefile = new ShapefileReader(WRITEPATH . '/shp/ADMIN_GROBOGAN_GEOGRAFIS.shp');
+            $Shapefile = new ShapefileReader(WRITEPATH . '/shp/BENCANA BANJIR_GEOGRAFIS.shp');
             $tot = $Shapefile->getTotRecords();
 			for ($i = 1; $i <= $tot; ++$i) {
 				try {
@@ -35,14 +35,18 @@ class ExportShp extends BaseController
 					$kodeKel = explode('.', $array['KDEPUM']);
 					$query = $table->where(['no_prop' => $kodeKel[0], 'no_kab' => $kodeKel[1], 'no_kec' => $kodeKel[2], 'no_kel' => $kodeKel[3]])->get()->getRowArray();
 					if (empty($query)) {
-						echo "desa tidak di ketahui\n";
-						print_r($array);
-						print_r($jsonData);
+						// echo "desa tidak di ketahui\n";
+						// print_r($array);
+						// print_r($jsonData);
 					} else {
-						$dataUpdate = [
-							'shp' => $shp
+						$dataInsert = [
+							'kec' => $kodeKel[2],
+							'kel' => $kodeKel[3],
+							'shp' => $shp,
+							'uupp' => $array['UUPP'],
+							'banjir' => $array['BANJIR']
 						];
-						$table->update($dataUpdate, ['id' => $query['id']]);
+						$db->table('peta_banjir')->insert($dataInsert);
 					}
 
 				} catch (ShapefileException $e) {
